@@ -1,8 +1,34 @@
-# Egg Attack
+<p align="center">
+  <img src="docs/cover.jpg" alt="Egg Attack cover: two T-rexes guard an egg in a nest while raptors close in, a volcano smokes and a meteor falls" width="100%">
+</p>
+
+<h1 align="center">Egg Attack</h1>
+
+<p align="center">
+  <b>Guard the egg, feed the baby T-rex, beat the bosses!</b><br>
+  A pixel-art game for 1 to 8 players, in the browser and on Windows.
+</p>
+
+<p align="center">
+  <a href="https://aikkuypers2005.github.io/Egg-Attack/"><b>Play in the browser</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/aikkuypers2005/Egg-Attack/releases/latest"><b>Download for Windows</b></a>
+</p>
 
 A pixel-art game about a T-rex family guarding their nest, based on the original `tirexs_aik_en_job.pde` sketch by Aik & Job.
 
 The egg sits in the nest in the middle of a long side-scrolling world. You hunt in the biomes to the left and right, carry the meat home, and defend the nest against raids. A boss wave comes every time the baby is ready to grow. When the baby is grown up, the game ends with a volcano eruption or a meteor strike.
+
+## Screenshots
+
+| | |
+|:---:|:---:|
+| ![Eight players at the nest with the list of T-rex types dealt for this game](docs/shot-8-players.png)<br>Up to 8 players, each with a different T-rex type | ![Split screen with four panes showing four different biomes](docs/shot-split-screen.png)<br>Split screen when players spread out over the world |
+| ![Boss fight against the Raptor Pack at the nest](docs/shot-raptor-pack.png)<br>The first boss wave: the Raptor Pack | ![Four players fighting the River and Sky Siege boss wave](docs/shot-boss.png)<br>Four players against the River and Sky Siege |
+| ![A T-rex wading in the surf at the Sea Coast](docs/shot-sea-coast.png)<br>The Sea Coast, 4500 m from the nest | ![A T-rex in the green fog of the Misty Swamp](docs/shot-swamp.png)<br>Hunting in the Misty Swamp |
+| ![The volcano erupts behind the grown-up T-rex family](docs/shot-volcano.png)<br>Ending 1: the volcano erupts | ![A giant meteor falls towards the valley](docs/shot-meteor.png)<br>Ending 2: the meteor |
+
+The screenshots are from the Windows version; the browser version looks the same. The cover picture is an illustration, not a screenshot.
 
 ## How the game works
 
