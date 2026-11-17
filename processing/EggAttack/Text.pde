@@ -12,6 +12,10 @@ void initText() {
   TEXT.put("m_solo", "Play alone (the computer plays your partner)");
   TEXT.put("m_local", "Together on 1 computer (2 to 8 players)");
   TEXT.put("m_controls", "Controls & how to play");
+  TEXT.put("sound_on", "Sound: on");
+  TEXT.put("sound_off", "Sound: off");
+  TEXT.put("credit_music1", "Music: \"Bassa Island Game Loop\" Kevin MacLeod (incompetech.com)");
+  TEXT.put("credit_music2", "Licensed under Creative Commons: By Attribution 4.0 License");
 
   TEXT.put("nav", "Arrows / WASD: choose   Space / Enter: OK");
   TEXT.put("back", "Esc: back to menu");

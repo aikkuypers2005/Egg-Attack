@@ -11,8 +11,8 @@
 [Setup]
 AppId={{C4AECAEF-A51E-4B68-A3FD-EF544A733E3F}
 AppName=Egg Attack
-AppVersion=1.1.0
-AppVerName=Egg Attack 1.1.0
+AppVersion=1.2.0
+AppVerName=Egg Attack 1.2.0
 AppPublisher=Aik Kuypers & Job
 DefaultDirName={localappdata}\Programs\Egg Attack
 DisableProgramGroupPage=yes
@@ -28,7 +28,7 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutputDir}
-OutputBaseFilename=EggAttack-Setup-1.1.0
+OutputBaseFilename=EggAttack-Setup-1.2.0
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
@@ -44,7 +44,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#ExportDir}\EggAttack.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
-; data: the JSON files, the headline font (with its licence OFL.txt), icon.png and the backdrops
+; data: the JSON files (sfx.json: the sound effects), the music loop bassa-island-game-loop.wav with MUSIC-CREDITS.txt,
+; the headline font (with its licence OFL.txt), icon.png and the backdrops
 Source: "{#ExportDir}\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; lib: the game (EggAttack.jar), Processing's core, and jamepad.jar from the sketch's code folder (controllers)
 Source: "{#ExportDir}\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs

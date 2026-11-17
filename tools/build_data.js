@@ -973,6 +973,73 @@ for (const [pid, p] of Object.entries(parts)) {
 
 const sprites = { parts, rigs };
 
+// ---------------------------------------------------------------- sound effects
+// Every effect is a few simple parts that are added together. Both versions build the sound from this
+// table with the same sums (src/audio.js and Audio.pde), so they sound alike.
+//   tone part : w = sq | saw | tri | sin, f = [from, to] in Hz, d = seconds, v = volume, t = start in seconds
+//   noise part: w = noise, lp = low-pass in Hz or [from, to], d, v, t
+const tone = (w, f0, f1, d, v, t) => ({ w, f: [f0, f1], d, v, t: t || 0 });
+const noise = (d, v, lp, t) => ({ w: 'noise', lp, d, v, t: t || 0 });
+const sounds = {
+  ui_move: [tone('sq', 520, 520, 0.04, 0.18)],
+  ui_ok: [tone('sq', 660, 660, 0.05, 0.2), tone('sq', 990, 990, 0.08, 0.2, 0.05)],
+  ui_back: [tone('sq', 440, 300, 0.08, 0.2)],
+
+  jump: [tone('sq', 240, 500, 0.12, 0.2)],
+  bite: [tone('sq', 190, 70, 0.08, 0.28), noise(0.06, 0.28, 2600, 0.02)],
+  pickup: [tone('sq', 660, 660, 0.05, 0.2), tone('sq', 880, 880, 0.08, 0.2, 0.05)],
+  drop: [tone('tri', 420, 220, 0.1, 0.25)],
+  phit: [tone('saw', 320, 70, 0.22, 0.32), noise(0.14, 0.25, 1400)],
+  pdown: [tone('sq', 300, 45, 0.55, 0.3)],
+  respawn: [tone('tri', 330, 660, 0.18, 0.25), tone('tri', 660, 990, 0.14, 0.2, 0.12)],
+
+  hit: [noise(0.1, 0.4, 1000), tone('sq', 130, 60, 0.09, 0.25)],
+  clang: [tone('tri', 900, 700, 0.07, 0.3), tone('sq', 1500, 1300, 0.04, 0.12)],
+  interrupt: [tone('sq', 500, 900, 0.07, 0.22), noise(0.05, 0.2, 3000)],
+  kill: [tone('sq', 220, 50, 0.28, 0.3), noise(0.2, 0.3, 800, 0.03)],
+
+  tele: [tone('sq', 880, 980, 0.07, 0.14)],
+  slash: [noise(0.12, 0.32, [4000, 900]), tone('saw', 300, 140, 0.1, 0.18)],
+  sweep: [noise(0.28, 0.35, [2500, 400])],
+  stomp: [tone('sin', 110, 38, 0.3, 0.55), noise(0.18, 0.3, 400)],
+  roar: [tone('saw', 150, 55, 0.85, 0.36), tone('sq', 110, 45, 0.85, 0.18), noise(0.75, 0.3, 600)],
+  rage: [tone('saw', 110, 190, 0.5, 0.34), noise(0.5, 0.28, 900), tone('saw', 190, 60, 0.5, 0.3, 0.45)],
+  spit: [tone('sin', 620, 200, 0.12, 0.3)],
+  splash: [noise(0.22, 0.3, [2400, 700])],
+  skid: [noise(0.35, 0.3, [1800, 500])],
+  call: [tone('saw', 700, 420, 0.12, 0.26), tone('saw', 660, 360, 0.12, 0.26, 0.14)],
+  rustle: [noise(0.12, 0.16, 5000)],
+  steal: [tone('sq', 520, 260, 0.1, 0.25), tone('sq', 390, 200, 0.14, 0.25, 0.1)],
+
+  babyhit: [tone('sq', 880, 440, 0.12, 0.3), tone('sq', 880, 440, 0.12, 0.3, 0.15)],
+  feed: [tone('sq', 520, 520, 0.06, 0.2), tone('sq', 620, 620, 0.08, 0.2, 0.06)],
+  meal: [tone('sq', 523, 523, 0.08, 0.24), tone('sq', 659, 659, 0.08, 0.24, 0.08), tone('sq', 784, 784, 0.14, 0.24, 0.16)],
+  hatch: [noise(0.1, 0.35, 3000), tone('tri', 500, 1000, 0.3, 0.3, 0.08), tone('tri', 750, 1500, 0.3, 0.22, 0.2)],
+
+  raid: [tone('sq', 660, 520, 0.14, 0.28), tone('sq', 660, 520, 0.14, 0.28, 0.17), tone('sq', 660, 520, 0.14, 0.28, 0.34)],
+  bosswarn: [tone('saw', 80, 60, 0.7, 0.34), tone('sq', 220, 165, 0.3, 0.22), tone('sq', 220, 165, 0.3, 0.22, 0.35)],
+  bossin: [tone('saw', 140, 50, 0.9, 0.4), tone('sq', 98, 49, 0.9, 0.2), noise(0.8, 0.32, 500)],
+  bossdown: [tone('sq', 392, 392, 0.1, 0.24), tone('sq', 523, 523, 0.1, 0.24, 0.1), tone('sq', 659, 659, 0.1, 0.24, 0.2), tone('sq', 784, 784, 0.34, 0.26, 0.3),
+    tone('tri', 196, 196, 0.3, 0.2), tone('tri', 392, 392, 0.34, 0.2, 0.3)],
+  gameover: [tone('sq', 392, 370, 0.25, 0.26), tone('sq', 330, 311, 0.25, 0.26, 0.25), tone('sq', 262, 247, 0.25, 0.26, 0.5), tone('sq', 196, 98, 0.6, 0.28, 0.75)],
+  rumble: [noise(1.2, 0.4, 300), tone('sin', 60, 40, 1.2, 0.4)],
+  boom: [noise(1.4, 0.5, [1800, 150]), tone('sin', 90, 28, 1.2, 0.45), tone('saw', 120, 30, 0.8, 0.22)]
+};
+// Which sound a game event plays. range: how far away (in px) it can be heard; without a range it is heard
+// everywhere. min: the least volume, for things at the nest that matter wherever you are.
+const near = (snd, range, min) => ({ snd, range: range || 520, min: min || 0 });
+const events = {
+  jump: near('jump', 360), bite: near('bite'), pickup: near('pickup', 360), drop: near('drop', 360),
+  phit: near('phit'), pdown: near('pdown', 700), respawn: near('respawn', 700),
+  hit: near('hit'), clang: near('clang'), interrupt: near('interrupt'), kill: near('kill', 600),
+  tele: near('tele', 300), slash: near('slash'), sweep: near('sweep'), stomp: near('stomp', 700), roar: near('roar', 900), rage: near('rage', 900),
+  spit: near('spit'), splash: near('splash'), skid: near('skid'), call: near('call', 700), rustle: near('rustle', 300),
+  steal: near('steal', 520, 0.3), babyhit: near('babyhit', 520, 0.45), feed: near('feed', 520, 0.25), meal: near('meal', 520, 0.4),
+  hatch: { snd: 'hatch' }, raid: { snd: 'raid' }, bosswarn: { snd: 'bosswarn' }, bossin: { snd: 'bossin' }, bossdown: { snd: 'bossdown' },
+  gameover: { snd: 'gameover' }, volcano_start: { snd: 'rumble' }, meteor_start: { snd: 'rumble' }, volcano_boom: { snd: 'boom' }, meteor_hit: { snd: 'boom' }
+};
+const sfx = { rate: 22050, sounds, events };
+
 // The Processing port is updated in a later step. Until then its data folder is left alone, so the old
 // Windows version keeps working with the data it was built for.
 const WRITE_TO_PROCESSING = true;
@@ -982,6 +1049,7 @@ for (const dir of WRITE_TO_PROCESSING ? [DATA_DIR, PDE_DATA_DIR] : [DATA_DIR]) {
   fs.writeFileSync(path.join(dir, 'dinos.json'), JSON.stringify(dinos, null, 2));
   fs.writeFileSync(path.join(dir, 'rexes.json'), JSON.stringify(rexes, null, 2));
   fs.writeFileSync(path.join(dir, 'sprites.json'), JSON.stringify(sprites));
+  fs.writeFileSync(path.join(dir, 'sfx.json'), JSON.stringify(sfx));
 }
 
 console.log(`Generated ${Object.keys(biomes.zones).length} biomes, ${Object.keys(dinos).length} creatures, ${Object.keys(parts).length} sprite parts, ${Object.keys(rigs).length} rigs.`);

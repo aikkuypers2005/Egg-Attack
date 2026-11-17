@@ -2,11 +2,13 @@
 // The main tab: the window, the fixed 60 steps per second game loop, the menus and the screen where players join.
 // A port of src/main.js of the web version, without online play. The other tabs follow the web files:
 //   Sim.pde (src/sim.js, the rules)  Draw.pde (src/draw.js)  Sprites.pde (src/sprites.js)  Fx.pde (src/fx.js)
-//   Input.pde (src/input.js)  Text.pde (src/text.js)  Test.pde (checks and screenshots without a window)
+//   Input.pde (src/input.js)  Text.pde (src/text.js)  Audio.pde (src/audio.js)
+//   Test.pde (checks and screenshots without a window)
 // Run with the argument  test  or  shots <folder>  for the checks; see Test.pde.
 
 final double STEP = 1000.0d / 60.0d;
-final String[] MENU = { "m_solo", "m_local", "m_controls" };
+final String[] MENU = { "m_solo", "m_local", "m_controls", "m_sound" };
+final int MENU_Y = 70, MENU_STEP = 18;
 
 int t = 0;                     // steps since the start, for animations
 double acc = 0;
@@ -38,6 +40,7 @@ void setup() {
   initText();
   initDraw();
   initControllers();
+  initAudio();                 // the music starts here, with the window; a sound problem never stops the game
   windowImg = createImage(W, H, RGB);
   if (args != null && args.length > 1 && eq(args[0], "autoplay")) autoPlay = new AutoPlay(args[1]);
   lastMs = millis();
@@ -90,6 +93,7 @@ void toggleMaximised() {
 void startGame(String r, int humans) {
   role = r;
   fxReset();
+  auReset();
   resetView();
   int seed = (int) (System.currentTimeMillis() & 0x7fffffffL);
   S = newGame(humans, seed != 0 ? seed : 13374201);
@@ -111,6 +115,10 @@ void tick() {
   t++;
   if (autoPlay != null) autoPlay.beforeTick();
   MenuInput m = inputTick();
+  if (!eq(app, "play")) {                                           // menu sounds
+    if (m.up || m.down || m.left || m.right) auPlay("ui_move");
+    if (m.back) auPlay("ui_back"); else if (m.ok || m.start || m.hasClick) auPlay("ui_ok");
+  }
   if (eq(app, "title")) tickTitle(m);
   else if (eq(app, "controls")) { if (m.back || m.ok || m.hasClick) app = "title"; }
   else if (eq(app, "lobby")) tickLobby(m);
@@ -123,8 +131,8 @@ void tickTitle(MenuInput m) {
   if (m.down) sel = (sel + 1) % MENU.length;
   if (m.hasClick) {
     for (int i = 0; i < MENU.length; i++) {
-      int ry = 74 + i * 20;
-      if (m.cy >= ry - 4 && m.cy <= ry + 16 && m.cx >= 90 && m.cx <= 390) { sel = i; m.ok = true; break; }
+      int ry = MENU_Y + i * MENU_STEP;
+      if (m.cy >= ry - 2 && m.cy < ry + MENU_STEP - 2 && m.cx >= 90 && m.cx <= 390) { sel = i; m.ok = true; break; }
     }
   }
   if (!m.ok) return;
@@ -132,6 +140,7 @@ void tickTitle(MenuInput m) {
   if (eq(k, "m_solo")) startGame("solo", 1);
   else if (eq(k, "m_local")) { app = "lobby"; devs = new ArrayList<String>(); joinPresses(); }
   else if (eq(k, "m_controls")) app = "controls";
+  else if (eq(k, "m_sound")) { auSetOn(!auOn); auPlay("ui_ok"); }
 }
 
 // Players on one computer join by pressing their bite button. Enter or Start begins with 2 or more.
@@ -144,10 +153,23 @@ void tickLobby(MenuInput m) {
   if (m.start && devs.size() >= 2) startGame("local", devs.size());
 }
 
+// The pause menu: resume, sound on or off, quit.
 void tickPause(MenuInput m) {
-  if (m.up || m.down) psel = 1 - psel;
+  if (m.up) psel = (psel + 2) % 3;
+  if (m.down) psel = (psel + 1) % 3;
+  if (m.hasClick && m.cy >= 120 && m.cy < 183) { psel = (int) Math.floor((m.cy - 120) / 21); m.ok = true; }   // click a line
   if (m.pause || m.back || (m.ok && psel == 0)) { app = "play"; return; }
-  if (m.ok && psel == 1) toTitle();
+  if (m.ok && psel == 1) { auSetOn(!auOn); auPlay("ui_ok"); return; }
+  if (m.ok && psel == 2) toTitle();
+}
+
+// Where this screen listens from: the x of every T-rex it shows.
+double[] ears() {
+  if (S == null) return new double[] { 0 };
+  int[] who = view.me >= 0 ? new int[] { view.me } : view.humans;
+  double[] xs = new double[who.length];
+  for (int i = 0; i < who.length; i++) xs[i] = who[i] < S.players.size() ? S.players.get(who[i]).x : 0;
+  return xs;
 }
 
 void tickPlay(MenuInput m) {
@@ -159,6 +181,7 @@ void tickPlay(MenuInput m) {
   } else inputs = new Inp[] { pollAll() };
   step(S, inputs);
   fxTick(S);
+  auEvents(S, ears());
   if ((eq(S.mode, "win") || eq(S.mode, "over")) && S.finaleT > 60 && (m.ok || m.hasClick)) toTitle();
 }
 
@@ -173,7 +196,7 @@ void render() {
     if (eq(app, "pause")) {
       R(0, 0, W, H, "rgba(8, 6, 16, 0.76)");
       T(tx("paused"), 240, 82, "#ffffff", "ps", 1, 2);
-      String[] items = { tx("resume"), tx("tomenu") };
+      String[] items = { tx("resume"), soundLine(), tx("tomenu") };
       for (int i = 0; i < items.length; i++) T((psel == i ? "> " : "") + items[i] + (psel == i ? " <" : ""), 240, 126 + i * 20, psel == i ? "#f8d040" : "#ffffff", "vt", 1);
     }
     return;
@@ -184,7 +207,7 @@ void render() {
     T(tx("title"), 242, 22, "#744318", "ps", 1, 2, false);
     T(tx("title"), 240, 20, "#ffe868", "ps", 1, 2);
     T(tx("sub"), 240, 44, "#e4ecff", "vt", 1);
-    for (int i = 0; i < MENU.length; i++) T((i == sel ? "> " : "") + tx(MENU[i]) + (i == sel ? " <" : ""), 240, 74 + i * 20, i == sel ? "#f8d040" : "#ffffff", "vt", 1);
+    for (int i = 0; i < MENU.length; i++) T((i == sel ? "> " : "") + (eq(MENU[i], "m_sound") ? soundLine() : tx(MENU[i])) + (i == sel ? " <" : ""), 240, MENU_Y + i * MENU_STEP, i == sel ? "#f8d040" : "#ffffff", "vt", 1);
     T(tx("credit"), 240, 236, "#cfd6ff", "vt", 1);
     T(tx("nav"), 240, 252, "#a8b4d4", "vt", 1);
   } else if (eq(app, "controls")) {
@@ -194,6 +217,8 @@ void render() {
     for (int i = 0; i < ck.length; i++) T(tx(ck[i]), 20, 32 + i * 15, i < 4 ? "#f8d040" : i == 4 ? "#ff9868" : "#78e878", "vt", 0);
     String[] tips = { "c_tip1", "c_tip2", "c_tip3", "c_tip4", "c_tip5" };
     for (int i = 0; i < tips.length; i++) T(tx(tips[i]), 20, 130 + i * 16, "#ffffff", "vt", 0);
+    T(tx("credit_music1"), 240, 211, "#8c98b8", "vt", 1);
+    T(tx("credit_music2"), 240, 223, "#8c98b8", "vt", 1);
     T(tx("back"), 240, 242, "#a8b4d4", "vt", 1);
   } else if (eq(app, "lobby")) {
     panel(20, 10, 440, 250);

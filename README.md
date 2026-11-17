@@ -88,8 +88,19 @@ Most keyboards only register a few keys at once. For 3 or 4 keyboard players, pl
 
 ## Windows version
 
-`processing/EggAttack` is the same game for Processing 4 (Java mode): play alone or with 2 to 8 players on one computer. It has no online play. Download the installer `EggAttack-Setup-1.1.0.exe` from the [Releases page](https://github.com/aikkuypers2005/Egg-Attack/releases), or open `EggAttack.pde` in Processing and press Run. The installer is not code-signed, so Windows SmartScreen may warn; choose "More info" and then "Run anyway". See `installer/README.md` for how to rebuild it.
+`processing/EggAttack` is the same game for Processing 4 (Java mode): play alone or with 2 to 8 players on one computer. It has no online play. Download the installer `EggAttack-Setup-1.2.0.exe` from the [Releases page](https://github.com/aikkuypers2005/Egg-Attack/releases), or open `EggAttack.pde` in Processing and press Run. The installer is not code-signed, so Windows SmartScreen may warn; choose "More info" and then "Run anyway". See `installer/README.md` for how to rebuild it.
 
+## Sound and music
+
+Both versions have sound effects and background music. "Sound: on / off" is in the title menu and in the pause menu.
+
+The sound effects are not recordings: the game builds each one from a short recipe in `data/sfx.json` (made by `tools/build_data.js`), the same way in both versions. Effects that happen far away from your T-rex are quieter or silent; the baby being hit and a boss arriving are heard everywhere.
+
+Music: "Bassa Island Game Loop" Kevin MacLeod (incompetech.com)<br>
+Licensed under Creative Commons: By Attribution 4.0 License<br>
+http://creativecommons.org/licenses/by/4.0/
+
+In a browser the sound starts after your first key press, click or tap (browsers do not allow it earlier).
 ## Tests
 
 ```powershell

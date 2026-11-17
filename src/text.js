@@ -13,7 +13,10 @@
     m_host: 'Online: host a game (up to 8 players)',
     m_join: 'Online: join a game',
     m_controls: 'Controls & how to play',
-
+    sound_on: 'Sound: on',
+    sound_off: 'Sound: off',
+    credit_music1: 'Music: "Bassa Island Game Loop" Kevin MacLeod (incompetech.com)',
+    credit_music2: 'Licensed under Creative Commons: By Attribution 4.0 License',
     nav: 'Arrows / WASD: choose   Space / Enter: OK',
     back: 'Esc: back to menu',
 

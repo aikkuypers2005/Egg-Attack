@@ -7,6 +7,7 @@
 //
 // The rule checks are a selection of test/smoke.js of the web version, with the same names and the same
 // details in brackets, so the lines can be compared with what Node prints.
+// None of these modes opens an audio device: the sound checks count the effects that would have started.
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -234,12 +235,19 @@ class Played {
   ArrayList<Double> mealsFrom = new ArrayList<Double>();
 }
 
+// The names of the events that happened in the games played by the tests (for the sound checks).
+final HashSet<String> eventsSeen = new HashSet<String>();
+int noteEvents(GameState S, int lastN) {
+  for (Ev e : S.evs) if (e.n > lastN) { lastN = e.n; eventsSeen.add(e.s); }
+  return lastN;
+}
+
 // Plays one game. noInput: nobody presses anything. Otherwise the test players play.
 Played botPlay(int humans, int seed, int max, boolean noInput) {
   Played log = new Played();
   GameState S = newGame(humans, seed);
   log.S = S;
-  int n = S.players.size(), f = 0, started = 0;
+  int n = S.players.size(), f = 0, started = 0, evLast = 0;
   boolean hadBoss = false;
   while (f < max && eq(S.mode, "play")) {
     f++;
@@ -247,6 +255,7 @@ Played botPlay(int humans, int seed, int max, boolean noInput) {
     for (int i = 0; i < n; i++) carry[i] = S.players.get(i).carry;
     int meals = S.stats.meals;
     step(S, noInput ? none(n) : botTeam(S));
+    evLast = noteEvents(S, evLast);
     for (int i = 0; i < n; i++) {
       Player p = S.players.get(i);
       // where the meat of every counted meal first appeared, as a distance from the nest
@@ -262,7 +271,7 @@ Played botPlay(int humans, int seed, int max, boolean noInput) {
     hadBoss = fighting;
   }
   log.frames = f;
-  while (eq(S.mode, "finale")) step(S, null);
+  while (eq(S.mode, "finale")) { step(S, null); evLast = noteEvents(S, evLast); }
   return log;
 }
 
@@ -321,6 +330,9 @@ void runTests() {
     }
     check("data: 24 creatures, 4 animations each, attacks have 4 poses, every biome has meals", DINO_IDS.size() == 24 && bad.isEmpty(), !bad.isEmpty() ? bad : DINO_IDS.size() + " creatures");
   }
+
+  // -------- 1b. sound
+  runSoundRuleChecks();
 
   // -------- 2. the game cannot win by itself
   {
@@ -646,10 +658,11 @@ void runTests() {
     check("the 13 full games end exactly like the web version's (length, ending, boss fights, damage)", sameAsWeb, sameAsWeb ? "" : "the four lines above differ from what node test/smoke.js prints");
   }
 
-  // -------- this version only: the small font, keys, controllers, menus
+  // -------- this version only: the small font, keys, controllers, menus, sound
   runFontChecks();
   runInputChecks();
   runMenuChecks();
+  runSoundChecks();
 
   println(failed > 0 ? "\n" + failed + " check(s) failed" : "\nAll checks passed");
   println("(" + (System.currentTimeMillis() - t0) / 1000 + " s)");
@@ -842,6 +855,167 @@ int countRealPads() {
   return n;
 }
 
+// ---------------------------------------------------------------- sound
+// The names of all events Sim.pde can emit: every  emit(S, "name", ...)  in it, in the order of the file
+// (the same 36 names test/smoke.js finds in src/sim.js).
+final String[] SIM_EVENTS = {
+  "babyhit", "gameover", "meal", "feed", "meteor_start", "volcano_start", "bosswarn", "bossin", "bossdown", "hatch", "call", "rage",
+  "phit", "pdown", "clang", "hit", "interrupt", "kill", "tele", "splash", "slash", "sweep", "stomp", "roar", "spit", "steal", "skid",
+  "rustle", "respawn", "jump", "drop", "pickup", "bite", "raid", "meteor_hit", "volcano_boom"
+};
+// What src/audio.js builds for the 37 sounds, all samples together (printed by  node installer/sfx_sum.js ):
+// the number of samples, the sum of their sizes as 16-bit numbers, and a running hash of them.
+final String SFX_SUM_WEB = "SFXSUM samples=308521 abs16=769299833 hash=-345407937";
+
+// The two sound checks of test/smoke.js (1b), with the same names and details.
+void runSoundRuleChecks() {
+  loadSfx();
+  ArrayList<String> missing = new ArrayList<String>();
+  for (String n : SIM_EVENTS) { SfxEvent m = SFX_EVENTS.get(n); if (m == null || !SFX_SOUNDS.containsKey(m.snd)) missing.add(n); }
+  String bad = "";
+  double longest = 0;
+  for (String k : SFX_SOUNDS.keySet()) {
+    float[] d = renderSfx(SFX_SOUNDS.get(k), sfxRate);
+    double peak = 0;
+    boolean nan = false;
+    for (float v : d) { if (!(v >= -1 && v <= 1)) nan = true; peak = Math.max(peak, Math.abs(v)); }
+    longest = Math.max(longest, d.length / (double) sfxRate);
+    if (nan || peak < 0.05d || d.length / (double) sfxRate > 1.6d) bad = k + " (peak " + fixed(peak, 2) + ")";
+  }
+  check("every game event has a sound, and every sound can be built (not silent, not too long)", SIM_EVENTS.length >= 30 && missing.isEmpty() && bad.isEmpty() && sfxLoaded,
+    !sfxLoaded ? auError : !missing.isEmpty() ? "no sound for: " + joinStr(missing, ", ") : !bad.isEmpty() ? bad : SIM_EVENTS.length + " events, " + SFX_SOUNDS.size() + " sounds, longest " + fixed(longest, 2) + " s");
+  if (!sfxLoaded) { check("a bite next to you is loud, far away it is silent; the baby being hit and a boss arriving are heard everywhere", false, auError); return; }
+  double near = loudness(SFX_EVENTS.get("bite"), 100, new double[] { 100, 5000 }), far = loudness(SFX_EVENTS.get("bite"), 100, new double[] { 2000 }),
+    alarm = loudness(SFX_EVENTS.get("babyhit"), 0, new double[] { 4000 }), boss = loudness(SFX_EVENTS.get("bossin"), 200, new double[] { 5000 });
+  check("a bite next to you is loud, far away it is silent; the baby being hit and a boss arriving are heard everywhere", near == 1 && far == 0 && alarm >= 0.4d && boss == 1,
+    "bite near " + num(near) + ", bite far " + num(far) + ", baby hit far " + num(alarm) + ", boss far " + num(boss));
+}
+
+// This version only: the effects are the web version's sample for sample, the rules for starting them,
+// the music file, and that nothing here opens an audio device.
+void runSoundChecks() {
+  loadSfx();
+  auSetOn(true);
+
+  // every sound, sample for sample, against what src/audio.js builds
+  long total = 0, abs16 = 0;
+  int hash = 0;
+  for (String k : SFX_SOUNDS.keySet()) {
+    float[] d = renderSfx(SFX_SOUNDS.get(k), sfxRate);
+    total += d.length;
+    for (float v : d) { int q = (int) Math.floor(v * 32767.0d + 0.5d); abs16 += Math.abs(q); hash = hash * 31 + q; }
+  }
+  String sumLine = "SFXSUM samples=" + total + " abs16=" + abs16 + " hash=" + hash;
+  println(sumLine);
+  check("sound: the 37 effects are built sample for sample like the web version's", sumLine.equals(SFX_SUM_WEB), sumLine.equals(SFX_SUM_WEB) ? total + " samples" : "the web version gives: " + SFX_SUM_WEB);
+
+  // every event that really happened in the games above (15 full games and a game with the made-up key presses
+  // of the fingerprints) is in the list and has a sound, so the list is not out of date
+  {
+    GameState G5 = newGame(5, 4242);
+    G5.baby.eggT = 3000;
+    int lastN = 0;
+    for (int f = 0; f < 6000; f++) {
+      Inp[] in = new Inp[G5.players.size()];
+      for (int i = 0; i < in.length; i++) in[i] = fpInput(f, i);
+      step(G5, in);
+      lastN = noteEvents(G5, lastN);
+    }
+    ArrayList<String> unknown = new ArrayList<String>(), never = new ArrayList<String>();
+    for (String e : eventsSeen) if (!SFX_EVENTS.containsKey(e) || !java.util.Arrays.asList(SIM_EVENTS).contains(e)) unknown.add(e);
+    for (String e : SIM_EVENTS) if (!eventsSeen.contains(e)) never.add(e);
+    java.util.Collections.sort(unknown);
+    check("sound: every event that happened in the test games is in the event list and has a sound", unknown.isEmpty() && eventsSeen.size() >= 25,
+      !unknown.isEmpty() ? "unknown: " + joinStr(unknown, ", ") : eventsSeen.size() + " of the " + SIM_EVENTS.length + " events happened" + (never.isEmpty() ? "" : "; not seen: " + joinStr(never, ", ")));
+  }
+
+  // the same sound not twice within 40 ms (3 steps are 50 ms); another sound at the same moment does start
+  t += 10;
+  int n0 = auStarted;
+  auPlay("bite"); auPlay("bite");
+  int twice = auStarted - n0;
+  t += 2; auPlay("bite");
+  int soon = auStarted - n0;
+  t += 1; auPlay("bite");
+  int later = auStarted - n0;
+  auPlay("jump");
+  int other = auStarted - n0;
+  check("sound: the same effect does not start twice within 40 ms; a different one at the same moment does", twice == 1 && soon == 1 && later == 2 && other == 3,
+    "twice in one step: " + twice + ", 33 ms later: " + (soon - twice) + ", 50 ms later: " + (later - soon) + ", another sound: " + (other - later));
+
+  // sound off: nothing starts, not by an event and not by a menu
+  auSetOn(false);
+  t += 10; n0 = auStarted;
+  auPlay("bite"); auPlay("ui_ok");
+  GameState Q = newGame(1, 5);
+  auReset();
+  emit(Q, "bite", 100, 0, 1); emit(Q, "bossin", 0, 0);
+  auEvents(Q, new double[] { 100 });
+  int off = auStarted - n0;
+  auSetOn(true);
+  t += 10;
+  emit(Q, "bite", 100, 0, 1);
+  auEvents(Q, new double[] { 100 });
+  int onAgain = auStarted - n0;
+  check("sound off: no effect starts; switched on again, the next event is heard (and the ones missed are not played late)", off == 0 && onAgain == 1 && eq(auLastSound, "bite"),
+    "started while off: " + off + ", after switching on: " + onAgain + " (" + auLastSound + ")");
+
+  // far and near, through the events of a game
+  GameState N = newGame(1, 5);
+  auReset();
+  t += 10; n0 = auStarted;
+  emit(N, "bite", 100, 0, 1);
+  auEvents(N, new double[] { 2000 });
+  int far = auStarted - n0;
+  auEvents(N, new double[] { 100 });                          // the same event again, now near: it is not played late
+  int again = auStarted - n0 - far;
+  t += 10;
+  emit(N, "bite", 100, 0, 1);
+  auEvents(N, new double[] { 2000, 100 });                    // two T-rexes on this screen: the nearest one counts
+  int near = auStarted - n0 - far - again;
+  String nearSound = auLastSound;
+  t += 10;
+  emit(N, "babyhit", 0, 0);
+  auEvents(N, new double[] { 4000 });
+  int alarm = auStarted - n0 - far - again - near;
+  String alarmSound = auLastSound;
+  check("sound: an event far away starts no effect, a near one does, and the baby being hit is heard from anywhere", far == 0 && again == 0 && near == 1 && eq(nearSound, "bite") && alarm == 1 && eq(alarmSound, "babyhit"),
+    "bite 1900 px away: " + far + ", bite next to a T-rex: " + near + " (" + nearSound + "), baby hit 4000 px away: " + alarm + " (" + alarmSound + ")");
+
+  // a game that is already running when the sound first sees it: what happened before is skipped
+  GameState R = newGame(1, 5);
+  R.tick = 100;
+  emit(R, "bossin", 0, 0);
+  auReset();
+  t += 10; n0 = auStarted;
+  auEvents(R, new double[] { 0 });
+  int old = auStarted - n0;
+  emit(R, "bossin", 0, 0);
+  auEvents(R, new double[] { 0 });
+  int fresh = auStarted - n0 - old;
+  check("sound: events from before the sound first saw a running game are skipped, new ones are played", old == 0 && fresh == 1, "old: " + old + ", new: " + fresh);
+  auReset();
+
+  // the music file (read from the file's header; no audio device is needed for that)
+  String music = "";
+  boolean musicOk = false;
+  try {
+    File f = new File(dataPath(MUSIC_FILE));
+    javax.sound.sampled.AudioFileFormat ff = AudioSystem.getAudioFileFormat(f);
+    AudioFormat fmt = ff.getFormat();
+    double secs = ff.getFrameLength() / (double) fmt.getSampleRate();
+    music = MUSIC_FILE + ": " + (int) fmt.getSampleRate() + " Hz, " + fmt.getChannels() + " channels, " + fmt.getSampleSizeInBits() + " bit, " + ff.getFrameLength() + " frames = " + fixed(secs, 2) + " s, " + f.length() + " bytes";
+    musicOk = eq(fmt.getEncoding().toString(), "PCM_SIGNED") && fmt.getSampleSizeInBits() == 16 && fmt.getChannels() == 2 && ff.getFrameLength() == 1474560 && fmt.getSampleRate() == 48000;
+  } catch (Throwable e) { music = e.toString(); }
+  boolean credits = new File(dataPath("MUSIC-CREDITS.txt")).isFile();
+  check("music: the loop is a 16-bit stereo WAV of 30.72 s, and MUSIC-CREDITS.txt is next to it", musicOk && credits, music + (credits ? "" : "; MUSIC-CREDITS.txt is missing"));
+
+  // nothing above opened an audio device
+  String threads = audioThreads();
+  check("sound: the test opens no audio device (no output line, no sound thread)", audioOut == null && threads.isEmpty(),
+    audioOut != null ? "an audio output was started" : threads.isEmpty() ? "effects counted instead: " + auStarted : "threads: " + threads);
+}
+
 // ---------------------------------------------------------------- the menus, driven with made-up key presses
 void tap(String code) { keyDown(code); tick(); keyUp(code); tick(); }
 
@@ -858,7 +1032,7 @@ void runMenuChecks() {
   tap("Escape"); trail.add(app);
   tap("ArrowUp"); tap("Space"); trail.add(app);      // the second entry: the join screen
   boolean controlsOk = eq(trail.get(0), "sel 2") && eq(trail.get(1), "controls") && eq(trail.get(2), "title") && eq(app, "lobby") && devs.isEmpty();
-  check("menu: 3 entries; controls opens and Escape goes back; the second entry opens the join screen with nobody joined", controlsOk, joinStr(trail, " -> "));
+  check("menu: 4 entries; controls opens and Escape goes back; the second entry opens the join screen with nobody joined", MENU.length == 4 && controlsOk, joinStr(trail, " -> "));
 
   // joining: bite button joins, again leaves, Enter needs 2 players
   tap("Space"); tap("KeyF"); tap("KeyH");
@@ -901,11 +1075,59 @@ void runMenuChecks() {
     render();
     tap("Escape");
     boolean resumed = eq(app, "play");
-    tap("Escape"); tap("ArrowDown"); tap("Enter");
+    // the pause menu has 3 lines: resume, sound, quit. The sound line switches and stays in the menu.
+    auSetOn(true);
+    tap("Escape"); tap("ArrowUp");
+    int wrapped = psel;                                // Up from the first line: the last
+    tap("ArrowDown"); tap("ArrowDown");
+    int soundRow = psel, frozenAt = S.tick;
+    tap("Enter");
+    boolean keyOff = !auOn && eq(app, "pause") && psel == 1 && eq(soundLine(), "Sound: off");
+    int startedBefore = auStarted;
+    tap("ArrowDown"); tap("ArrowUp");                  // moving in the menu while the sound is off starts no effect
+    int startedOff = auStarted - startedBefore;
+    render();
+    tap("Enter");
+    boolean keyOn = auOn && eq(app, "pause") && psel == 1 && eq(soundLine(), "Sound: on") && auStarted == startedBefore + startedOff + 1;
+    psel = 0;
+    clicks.add(new float[] { 240, 146 }); tick();
+    boolean clickOff = !auOn && eq(app, "pause") && psel == 1;
+    clicks.add(new float[] { 240, 146 }); tick();
+    boolean clickOn = auOn && eq(app, "pause") && psel == 1;
+    boolean stillFrozen = S != null && S.tick == frozenAt;
+    check("pause menu: 3 lines; the sound line switches the sound off and on, with a key and with a click, and stays in the menu",
+      wrapped == 2 && soundRow == 1 && keyOff && startedOff == 0 && keyOn && clickOff && clickOn && stillFrozen,
+      "Up from line 1 goes to line " + (wrapped + 1) + ", key: off " + keyOff + " then on " + keyOn + ", effects started while off: " + startedOff + ", click: off " + clickOff + " then on " + clickOn + ", still paused: " + eq(app, "pause"));
+    auSetOn(true);
+    tap("ArrowDown"); tap("Enter");                    // the third line: quit
     check("in the game: every player steers their own T-rex; Escape pauses, Escape again resumes, quitting goes to the title",
       moved && paused && frozen && resumed && eq(app, "title") && S == null,
       "moved: " + moved + ", paused: " + paused + ", time stood still: " + frozen + ", resumed: " + resumed + ", then: " + app);
   } else check("in the game: every player steers their own T-rex; Escape pauses, Escape again resumes, quitting goes to the title", false, "the game did not start");
+
+  // the title menu's fourth entry: sound on / off. It switches and stays on the title.
+  inputReset();
+  auSetOn(true);
+  app = "title"; sel = 0;
+  tick(); tap("ArrowUp");                              // Up from the first entry: the last
+  int soundEntry = sel;
+  tap("Enter");
+  boolean tOff = !auOn && eq(app, "title") && sel == 3 && eq(soundLine(), "Sound: off");
+  int before = auStarted;
+  render();
+  tap("ArrowDown"); tap("ArrowUp");                    // moving in the menu while the sound is off starts no effect
+  int whileOff = auStarted - before;
+  tap("Enter");
+  boolean tOn = auOn && eq(app, "title") && sel == 3 && eq(soundLine(), "Sound: on") && auStarted == before + whileOff + 1;
+  sel = 0;
+  clicks.add(new float[] { 240, MENU_Y + 3 * MENU_STEP + 6 }); tick();
+  boolean tClickOff = !auOn && eq(app, "title") && sel == 3;
+  clicks.add(new float[] { 240, MENU_Y + 3 * MENU_STEP + 6 }); tick();
+  boolean tClickOn = auOn && eq(app, "title") && sel == 3;
+  check("title menu: the fourth entry switches the sound off and on, with a key and with a click, and stays on the title",
+    soundEntry == 3 && tOff && whileOff == 0 && tOn && tClickOff && tClickOn,
+    "entry " + (soundEntry + 1) + " of " + MENU.length + ", key: off " + tOff + " then on " + tOn + ", effects started while off: " + whileOff + ", click: off " + tClickOff + " then on " + tClickOn);
+  auSetOn(true);
 
   // alone: 2 T-rexes, yours and the computer's, and the end screen goes back to the title
   inputReset();
@@ -970,6 +1192,8 @@ void runShots(File dir) {
 
   // menus
   app = "title"; sel = 0; t = 40; render(); shot(dir, "01_title.png");
+  auSetOn(false); sel = 3; render(); shot(dir, "33_title_sound_off.png");        // the fourth entry chosen, sound switched off
+  auSetOn(true); sel = 0;
   app = "controls"; render(); shot(dir, "02_controls.png");
   app = "lobby"; devs = new ArrayList<String>(); devs.add("kb1"); devs.add("kb2"); devs.add("pad0"); render(); shot(dir, "03_join_3_players.png");
   devs = new ArrayList<String>(); for (String d : DEVICES) devs.add(d); render(); shot(dir, "04_join_8_players.png");
@@ -1062,6 +1286,8 @@ void runShots(File dir) {
   play(S, 400, false);
   GameState keep = this.S;
   this.S = S; app = "pause"; psel = 0; t = 400; render(); shot(dir, "22_pause.png");
+  auSetOn(false); psel = 1; render(); shot(dir, "32_pause_sound_off.png");      // the sound line chosen, sound switched off
+  auSetOn(true); psel = 0;
   this.S = keep; app = "title";
 
   // far from home: the sea with its creatures, and the swamp water
@@ -1129,7 +1355,7 @@ void runShots(File dir) {
   println("hit before the ending: invT was " + inv0 + " and " + inv1 + ", and is " + S.players.get(0).invT + " and " + S.players.get(1).invT + " on the result screen; the baby's hurtT is " + S.baby.hurtT);
 
   injectedPadStates = null;
-  println("Saved 31 screenshots to " + dir.getAbsolutePath());
+  println("Saved 33 screenshots to " + dir.getAbsolutePath());
 }
 
 void runSheets(File dir) {
@@ -1162,6 +1388,7 @@ class AutoPlay {
   void beforeTick() {
     if (done) return;
     if (t == 20) note("title menu, entry " + sel + ", app=" + app);
+    if (t == 22) note("sound at the start: " + audioFacts());
     shotAt(25, "window_1_title.png");
     tapKey(30, "ArrowDown");
     tapKey(50, "Enter");
@@ -1171,6 +1398,7 @@ class AutoPlay {
     shotAt(145, "window_2_join.png");
     tapKey(160, "Enter");
     if (t == 180) note("after Enter: app=" + app + ", T-rexes " + (S != null ? S.players.size() : 0));
+    if (t == 240) note("sound after 4 seconds: " + audioFacts() + "; sound threads: " + audioThreads());
     holdKey(190, 760, "ArrowRight"); holdKey(190, 760, "KeyA");
     tapKey(300, "ArrowUp"); tapKey(330, "Space"); tapKey(360, "KeyW");
     shotAt(420, "window_3_game.png");
@@ -1184,8 +1412,15 @@ class AutoPlay {
     tapKey(990, "Escape");
     if (t == 1010) note("after Escape: app=" + app + " (the window is still open)");
     shotAt(1015, "window_6_pause.png");
-    tapKey(1030, "ArrowDown"); tapKey(1050, "Enter");
-    if (t == 1070) note("after Down + Enter in the pause menu: app=" + app);
+    if (t == 1016) note("sound before the pause menu's sound line is used: " + audioFacts() + "; started so far: " + audioCounts());
+    tapKey(1020, "ArrowDown"); tapKey(1026, "Enter");
+    if (t == 1032) note("after Down + Enter in the pause menu: app=" + app + ", line " + psel + ", " + soundLine());
+    shotAt(1033, "window_6b_pause_sound_off.png");
+    if (t == 1040) note("sound while switched off: " + audioFacts());
+    tapKey(1042, "Enter");
+    if (t == 1048) note("after Enter again: app=" + app + ", line " + psel + ", " + soundLine());
+    tapKey(1052, "ArrowDown"); tapKey(1060, "Enter");
+    if (t == 1070) note("after Down + Enter on the third line of the pause menu: app=" + app);
     // From here the script sets scenes up directly (like the test links of the web version) and shows
     // them in the real window: 5 players spread out, a boss fight, an ending and its result screen.
     if (t == 1090) {
@@ -1222,6 +1457,8 @@ class AutoPlay {
     tapKey(1810, "Space");
     if (t == 1830) note("after Space on the result screen: app=" + app);
     if (t == 1840) {
+      note("sound at the end: " + audioFacts());
+      note("effects started, by sound: " + audioCounts());
       note("frame rate " + Math.round(frameRate) + ", screenshots " + shots + ", done");
       saveStrings(new File(dir, "autoplay_log.txt").getAbsolutePath(), log.toArray(new String[0]));
       done = true;

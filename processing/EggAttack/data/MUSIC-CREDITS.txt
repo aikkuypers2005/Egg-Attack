@@ -1,0 +1,13 @@
+Music in Egg Attack
+
+"Bassa Island Game Loop" Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+http://creativecommons.org/licenses/by/4.0/
+
+Source: https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100840
+Files: assets/audio/bassa-island-game-loop.mp3 (as downloaded) and
+processing/EggAttack/data/bassa-island-game-loop.wav (the same recording converted to WAV and cut to its
+first 30.72 seconds, 16 bars, so that it repeats without a gap).
+
+The sound effects are not recordings. The game builds them from the table in data/sfx.json
+(made by tools/build_data.js); they are part of the game and under its MIT licence.

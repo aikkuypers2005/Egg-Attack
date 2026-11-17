@@ -53,6 +53,31 @@ const median = a => a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)];
   check('data: 24 creatures, 4 animations each, attacks have 4 poses, every biome has meals', kinds.length === 24 && !bad, bad || kinds.length + ' creatures');
 }
 
+// ---------------------------------------------------------------- 1b. sound
+{
+  const A = require('../src/audio.js').audio, sfx = require('../data/sfx.json');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../src/sim.js'), 'utf8');
+  const names = new Set();
+  for (const m of src.matchAll(/emit\(S, ([^,]+),/g)) {
+    const arg = m[1].includes('?') ? m[1].slice(m[1].indexOf('?')) : m[1];
+    for (const q of arg.matchAll(/'([a-z_]+)'/g)) names.add(q[1]);
+  }
+  const missing = [...names].filter(n => !sfx.events[n] || !sfx.sounds[sfx.events[n].snd]);
+  let bad = '', longest = 0;
+  for (const [k, parts] of Object.entries(sfx.sounds)) {
+    const d = A.render(parts, sfx.rate);
+    let peak = 0, nan = false;
+    for (const v of d) { if (!(v >= -1 && v <= 1)) nan = true; peak = Math.max(peak, Math.abs(v)); }
+    longest = Math.max(longest, d.length / sfx.rate);
+    if (nan || peak < 0.05 || d.length / sfx.rate > 1.6) bad = k + ' (peak ' + peak.toFixed(2) + ')';
+  }
+  check('every game event has a sound, and every sound can be built (not silent, not too long)', names.size >= 30 && !missing.length && !bad,
+    missing.length ? 'no sound for: ' + missing.join(', ') : bad || names.size + ' events, ' + Object.keys(sfx.sounds).length + ' sounds, longest ' + longest.toFixed(2) + ' s');
+  const near = A.loudness(sfx.events.bite, 100, [100, 5000]), far = A.loudness(sfx.events.bite, 100, [2000]), alarm = A.loudness(sfx.events.babyhit, 0, [4000]), boss = A.loudness(sfx.events.bossin, 200, [5000]);
+  check('a bite next to you is loud, far away it is silent; the baby being hit and a boss arriving are heard everywhere', near === 1 && far === 0 && alarm >= 0.4 && boss === 1,
+    'bite near ' + near + ', bite far ' + far + ', baby hit far ' + alarm + ', boss far ' + boss);
+}
+
 // ---------------------------------------------------------------- 2. the game cannot win by itself
 {
   const out = [];
