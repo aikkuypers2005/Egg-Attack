@@ -1,0 +1,154 @@
+{
+  "worldMin": -5400,
+  "worldMax": 5400,
+  "groundY": 216,
+  "zones": [
+    {
+      "id": "canyon",
+      "name": "Bone Canyon",
+      "side": "left",
+      "x0": -5400,
+      "x1": -4200,
+      "bg": "canyon",
+      "sky": "#3d1c2e",
+      "ground": "#6e3528",
+      "grass": "#9c4f35",
+      "accent": "#d8ccb8",
+      "tier": 4
+    },
+    {
+      "id": "dunes",
+      "name": "Scorched Dunes",
+      "side": "left",
+      "x0": -4200,
+      "x1": -3000,
+      "bg": "dunes",
+      "sky": "#6b3b1e",
+      "ground": "#b8843e",
+      "grass": "#dca959",
+      "accent": "#8c5a2b",
+      "tier": 3
+    },
+    {
+      "id": "swamp",
+      "name": "Misty Swamp",
+      "side": "left",
+      "x0": -3000,
+      "x1": -1700,
+      "bg": "swamp",
+      "sky": "#24302c",
+      "ground": "#38462c",
+      "grass": "#4f6b38",
+      "accent": "#6d8c49",
+      "tier": 2
+    },
+    {
+      "id": "jungle",
+      "name": "Deep Jungle",
+      "side": "left",
+      "x0": -1700,
+      "x1": -500,
+      "bg": "jungle",
+      "sky": "#183834",
+      "ground": "#3e3222",
+      "grass": "#2d7a3e",
+      "accent": "#52a849",
+      "tier": 1
+    },
+    {
+      "id": "meadow",
+      "name": "Fern Meadow",
+      "side": "center",
+      "x0": -500,
+      "x1": 500,
+      "bg": "meadow",
+      "sky": "#3b6ea5",
+      "ground": "#5c4328",
+      "grass": "#4ca638",
+      "accent": "#78cc4c",
+      "tier": 0
+    },
+    {
+      "id": "river",
+      "name": "River Delta",
+      "side": "right",
+      "x0": 500,
+      "x1": 1700,
+      "bg": "river",
+      "sky": "#3878a8",
+      "ground": "#5a4a32",
+      "grass": "#449e48",
+      "accent": "#5bc0be",
+      "tier": 1
+    },
+    {
+      "id": "mushroom",
+      "name": "Mushroom Forest",
+      "side": "right",
+      "x0": 1700,
+      "x1": 3000,
+      "bg": "mushroom",
+      "sky": "#162044",
+      "ground": "#2a2845",
+      "grass": "#26688a",
+      "accent": "#4ce8e0",
+      "tier": 2
+    },
+    {
+      "id": "crag",
+      "name": "Crag Field",
+      "side": "right",
+      "x0": 3000,
+      "x1": 4200,
+      "bg": "crag",
+      "sky": "#3a2622",
+      "ground": "#38343a",
+      "grass": "#594a42",
+      "accent": "#e06830",
+      "tier": 3
+    },
+    {
+      "id": "coast",
+      "name": "Sea Coast",
+      "side": "right",
+      "x0": 4200,
+      "x1": 5400,
+      "bg": "coast",
+      "sky": "#2c5d7c",
+      "ground": "#9c8a5e",
+      "grass": "#baa874",
+      "accent": "#3a9ec4",
+      "tier": 4
+    }
+  ],
+  "water": [
+    {
+      "x0": -2800,
+      "x1": -2000,
+      "depth": "shallow",
+      "col": "#2d523a",
+      "foam": "#5a8a62"
+    },
+    {
+      "x0": 700,
+      "x1": 1400,
+      "depth": "shallow",
+      "col": "#2a7694",
+      "foam": "#74c8dc"
+    },
+    {
+      "x0": 4250,
+      "x1": 4850,
+      "depth": "shallow",
+      "col": "#24688e",
+      "foam": "#7ed6ea"
+    },
+    {
+      "x0": 4850,
+      "x1": 5400,
+      "depth": "deep",
+      "col": "#12385c",
+      "foam": "#4fa4c8"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Egg Attack - online test</title>
+  <style>
+    body { margin: 0; background: #111; color: #ddd; font: 14px sans-serif; }
+    #info { padding: 6px 10px; }
+    #grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; }
+    iframe { width: 100%; aspect-ratio: 16 / 9; border: 1px solid #444; background: #000; }
+  </style>
+</head>
+<body>
+  <!-- Test page for online play: one real host and several real guests, each in its own frame, connected
+       through the same connection service the game uses. Open nettest.html?guests=3 (1 to 7).
+       Every player walks and bites by itself. The status line reads each frame's game state. -->
+  <div id="info">starting...</div>
+  <div id="grid"></div>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const guests = Math.max(1, Math.min(7, Number(q.get('guests')) || 2));
+    const abc = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 4; i++) code += abc[(Math.random() * abc.length) | 0];
+    const grid = document.getElementById('grid'), frames = [];
+    function add(src) { const f = document.createElement('iframe'); f.src = src; grid.appendChild(f); frames.push(f); }
+    add('index.html?host=' + code + '&n=' + guests + '&auto=1');
+    // the guests join a little later, so the host's room exists
+    setTimeout(() => { for (let i = 0; i < guests; i++) add('index.html?join=' + code + '&auto=1'); }, 2500);
+    // ?drop=20 closes the last guest after 20 seconds, to test that the computer takes over its T-rex.
+    // The host's "ai" digits in the status line then show a 1 for that T-rex.
+    const dropAt = Number(q.get('drop')) || 0;
+    if (dropAt) setTimeout(() => { const f = frames.pop(); if (f) f.remove(); }, dropAt * 1000);
+
+    // Status: what each frame reports about its own game. Also kept in window.NETTEST for the tester.
+    setInterval(() => {
+      const rows = frames.map((f, i) => {
+        try {
+          const d = f.contentWindow.DINO && f.contentWindow.DINO.dbg;
+          if (!d) return { who: i ? 'guest ' + i : 'host', app: 'loading' };
+          const S = d.S;
+          return {
+            who: i ? 'guest ' + i : 'host', app: d.app, role: d.role, net: d.net.status, slot: d.net.slot, joined: d.net.count,
+            players: S ? S.players.length : 0, tick: S ? S.tick : 0, mode: S ? S.mode : '',
+            me: S && d.view.me >= 0 && S.players[d.view.me] ? Math.round(S.players[d.view.me].x) : null,
+            xs: S ? S.players.map(p => Math.round(p.x)).join(',') : '', ai: S ? S.players.map(p => (p.ai ? 1 : 0)).join('') : ''
+          };
+        } catch (e) { return { who: i ? 'guest ' + i : 'host', app: 'error: ' + e.message }; }
+      });
+      window.NETTEST = { code, guests, rows };
+      document.getElementById('info').textContent = 'room ' + code + ' | ' + rows.map(r => r.who + ': ' + r.app + (r.net ? '/' + r.net : '') + (r.players ? ' ' + r.players + 'p tick ' + r.tick + ' slot ' + r.slot + ' ai ' + r.ai : '')).join(' | ');
+    }, 500);
+  </script>
+</body>
+</html>

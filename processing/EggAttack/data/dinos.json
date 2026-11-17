@@ -1,0 +1,487 @@
+{
+  "compsognathus": {
+    "name": "Compsognathus",
+    "group": "carnivore",
+    "size": "tiny",
+    "hp": 16,
+    "speed": 2.05,
+    "damage": 3,
+    "reach": 12,
+    "w": 14,
+    "h": 11,
+    "role": "raider",
+    "special": "steal",
+    "biomes": [
+      "jungle",
+      "river"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 0
+    }
+  },
+  "velociraptor": {
+    "name": "Velociraptor",
+    "group": "carnivore",
+    "size": "small",
+    "hp": 34,
+    "speed": 2.25,
+    "damage": 7,
+    "reach": 16,
+    "w": 22,
+    "h": 16,
+    "role": "raider",
+    "special": "pounce",
+    "biomes": [
+      "jungle"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 1
+    }
+  },
+  "dilophosaurus": {
+    "name": "Dilophosaurus",
+    "group": "carnivore",
+    "size": "small",
+    "hp": 38,
+    "speed": 1.75,
+    "damage": 6,
+    "reach": 16,
+    "w": 24,
+    "h": 17,
+    "role": "raider",
+    "special": "spit",
+    "biomes": [
+      "swamp"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 2
+    }
+  },
+  "baryonyx": {
+    "name": "Baryonyx",
+    "group": "carnivore",
+    "size": "medium",
+    "hp": 62,
+    "speed": 1.85,
+    "damage": 10,
+    "reach": 22,
+    "w": 32,
+    "h": 22,
+    "role": "guard",
+    "special": "aquatic_fast",
+    "biomes": [
+      "swamp"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 2
+    }
+  },
+  "carnotaurus": {
+    "name": "Carnotaurus",
+    "group": "carnivore",
+    "size": "medium-large",
+    "hp": 84,
+    "speed": 2.55,
+    "damage": 13,
+    "reach": 24,
+    "w": 38,
+    "h": 27,
+    "role": "raider",
+    "special": "sprint",
+    "biomes": [
+      "dunes"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 3
+    }
+  },
+  "allosaurus": {
+    "name": "Allosaurus",
+    "group": "carnivore",
+    "size": "large",
+    "hp": 96,
+    "speed": 1.85,
+    "damage": 15,
+    "reach": 26,
+    "w": 44,
+    "h": 30,
+    "role": "raider",
+    "special": "none",
+    "biomes": [
+      "crag"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 3
+    }
+  },
+  "tyrannosaurus": {
+    "name": "Rival T-Rex",
+    "group": "carnivore",
+    "size": "giant",
+    "hp": 155,
+    "speed": 1.55,
+    "damage": 22,
+    "reach": 30,
+    "w": 52,
+    "h": 36,
+    "role": "raider",
+    "special": "roar",
+    "biomes": [
+      "canyon"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 4
+    }
+  },
+  "giganotosaurus": {
+    "name": "Giganotosaurus",
+    "group": "carnivore",
+    "size": "giant",
+    "hp": 165,
+    "speed": 1.9,
+    "damage": 18,
+    "reach": 32,
+    "w": 56,
+    "h": 38,
+    "role": "raider",
+    "special": "bleed",
+    "biomes": [
+      "canyon"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 4
+    }
+  },
+  "spinosaurus": {
+    "name": "Spinosaurus",
+    "group": "carnivore",
+    "size": "giant",
+    "hp": 160,
+    "speed": 1.75,
+    "damage": 19,
+    "reach": 31,
+    "w": 56,
+    "h": 40,
+    "role": "raider",
+    "special": "aquatic_boss",
+    "biomes": [
+      "coast"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 4
+    }
+  },
+  "dryosaurus": {
+    "name": "Dryosaurus",
+    "group": "herbivore",
+    "size": "small",
+    "hp": 20,
+    "speed": 2.1,
+    "damage": 0,
+    "reach": 10,
+    "w": 20,
+    "h": 14,
+    "role": "prey",
+    "special": "bush_hide",
+    "biomes": [
+      "jungle",
+      "river"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 1
+    }
+  },
+  "gallimimus": {
+    "name": "Gallimimus",
+    "group": "herbivore",
+    "size": "small-medium",
+    "hp": 28,
+    "speed": 2.75,
+    "damage": 0,
+    "reach": 12,
+    "w": 26,
+    "h": 20,
+    "role": "prey",
+    "special": "dash_flee",
+    "biomes": [
+      "dunes"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 3
+    }
+  },
+  "pachycephalosaurus": {
+    "name": "Pachycephalosaurus",
+    "group": "herbivore",
+    "size": "small-medium",
+    "hp": 46,
+    "speed": 2.15,
+    "damage": 9,
+    "reach": 18,
+    "w": 26,
+    "h": 19,
+    "role": "guard",
+    "special": "ram_stun",
+    "biomes": [
+      "crag"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 3
+    }
+  },
+  "iguanodon": {
+    "name": "Iguanodon",
+    "group": "herbivore",
+    "size": "medium",
+    "hp": 58,
+    "speed": 1.75,
+    "damage": 9,
+    "reach": 20,
+    "w": 32,
+    "h": 22,
+    "role": "defend",
+    "special": "thumb_spike",
+    "biomes": [
+      "jungle",
+      "river"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 1
+    }
+  },
+  "parasaurolophus": {
+    "name": "Parasaurolophus",
+    "group": "herbivore",
+    "size": "medium",
+    "hp": 50,
+    "speed": 2,
+    "damage": 4,
+    "reach": 18,
+    "w": 34,
+    "h": 24,
+    "role": "prey",
+    "special": "herd_call",
+    "biomes": [
+      "river"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 1
+    }
+  },
+  "ankylosaurus": {
+    "name": "Ankylosaurus",
+    "group": "herbivore",
+    "size": "medium-large",
+    "hp": 95,
+    "speed": 1.15,
+    "damage": 15,
+    "reach": 24,
+    "w": 38,
+    "h": 22,
+    "role": "defend",
+    "special": "armor_club",
+    "biomes": [
+      "mushroom"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 2
+    }
+  },
+  "stegosaurus": {
+    "name": "Stegosaurus",
+    "group": "herbivore",
+    "size": "large",
+    "hp": 88,
+    "speed": 1.25,
+    "damage": 14,
+    "reach": 26,
+    "w": 44,
+    "h": 28,
+    "role": "defend",
+    "special": "tail_bleed",
+    "biomes": [
+      "mushroom"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 2
+    }
+  },
+  "triceratops": {
+    "name": "Triceratops",
+    "group": "herbivore",
+    "size": "large",
+    "hp": 105,
+    "speed": 1.85,
+    "damage": 16,
+    "reach": 26,
+    "w": 44,
+    "h": 28,
+    "role": "guard",
+    "special": "horn_charge",
+    "biomes": [
+      "dunes",
+      "crag"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 3
+    }
+  },
+  "diplodocus": {
+    "name": "Diplodocus",
+    "group": "herbivore",
+    "size": "titan",
+    "hp": 170,
+    "speed": 0.95,
+    "damage": 14,
+    "reach": 42,
+    "w": 72,
+    "h": 38,
+    "role": "defend",
+    "special": "tail_whip",
+    "biomes": [
+      "swamp"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 2
+    }
+  },
+  "brachiosaurus": {
+    "name": "Brachiosaurus",
+    "group": "herbivore",
+    "size": "titan",
+    "hp": 9999,
+    "speed": 0.65,
+    "damage": 20,
+    "reach": 30,
+    "w": 64,
+    "h": 58,
+    "role": "hazard",
+    "special": "stomp",
+    "biomes": [
+      "canyon"
+    ],
+    "habitat": "land",
+    "food": {
+      "tier": 0
+    }
+  },
+  "microraptor": {
+    "name": "Microraptor",
+    "group": "flyer",
+    "size": "tiny",
+    "hp": 18,
+    "speed": 2.35,
+    "damage": 5,
+    "reach": 14,
+    "w": 16,
+    "h": 12,
+    "role": "ambush",
+    "special": "canopy_drop",
+    "biomes": [
+      "jungle"
+    ],
+    "habitat": "air",
+    "food": {
+      "tier": 0
+    }
+  },
+  "pteranodon": {
+    "name": "Pteranodon",
+    "group": "flyer",
+    "size": "medium",
+    "hp": 32,
+    "speed": 2.45,
+    "damage": 8,
+    "reach": 18,
+    "w": 32,
+    "h": 18,
+    "role": "raider",
+    "special": "swoop",
+    "biomes": [
+      "mushroom"
+    ],
+    "habitat": "air",
+    "food": {
+      "tier": 2
+    }
+  },
+  "plesiosaurus": {
+    "name": "Plesiosaurus",
+    "group": "swimmer",
+    "size": "medium",
+    "hp": 68,
+    "speed": 2,
+    "damage": 12,
+    "reach": 26,
+    "w": 38,
+    "h": 22,
+    "role": "water_guard",
+    "special": "water_lunge",
+    "biomes": [
+      "coast"
+    ],
+    "habitat": "water",
+    "food": {
+      "tier": 4
+    }
+  },
+  "quetzalcoatlus": {
+    "name": "Quetzalcoatlus",
+    "group": "flyer",
+    "size": "giant",
+    "hp": 92,
+    "speed": 2.2,
+    "damage": 15,
+    "reach": 28,
+    "w": 54,
+    "h": 34,
+    "role": "raider",
+    "special": "snatch_food",
+    "biomes": [
+      "canyon",
+      "coast"
+    ],
+    "habitat": "air",
+    "food": {
+      "tier": 4
+    }
+  },
+  "mosasaurus": {
+    "name": "Mosasaurus",
+    "group": "swimmer",
+    "size": "titan",
+    "hp": 240,
+    "speed": 2.4,
+    "damage": 34,
+    "reach": 38,
+    "w": 70,
+    "h": 28,
+    "role": "deep_boss",
+    "special": "deep_breach",
+    "biomes": [
+      "coast"
+    ],
+    "habitat": "deep_water",
+    "food": {
+      "tier": 4
+    }
+  }
+}
