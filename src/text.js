@@ -40,6 +40,21 @@
     net_bye: 'The host ended the game.',
     ai_took: 'A player left. The computer took over their T-rex.',
 
+    // on a phone or tablet (touch buttons instead of keys)
+    t_nav: 'Tap a line to choose',
+    t_back: 'Tap here to go back',
+    t_lobby_need: 'At least 2 players. Tap here to go back',
+    t_lobby_go: '{n} players. Tap here to begin!',
+    t_host_go: 'Tap the code to start.',
+    t_join_code: 'Tap the 4 letters of the code from the host:',
+    t_join: 'JOIN',
+    t_dev: 'Touch buttons',
+    t_retry_hint: 'Tap to return to the menu',
+    c_touch: 'Touch: arrow buttons walk; JUMP, BITE, GRAB (grab also drops)',
+
+    leave_q: 'LEAVE THE GAME?',
+    keep: 'Keep playing',
+
     paused: 'PAUSED',
     resume: 'Resume game',
     tomenu: 'Quit to title menu',

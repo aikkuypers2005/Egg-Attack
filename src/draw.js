@@ -363,8 +363,10 @@
     if (S.mode === 'play') {
       const z = sim.biomeAt(camX), far = Math.round(Math.abs(camX));
       const label = z.name + (far < 45 ? '' : '  ' + far + 'm');
-      R(pane.x + 2, pane.y + pane.h - 15, measure(label, 'vt') + 6, 13, 'rgba(12,10,22,0.7)');
-      T(label, pane.x + 5, pane.y + pane.h - 17, '#bcd4f0', 'vt', 0);
+      const lw = measure(label, 'vt') + 6;
+      const lx = D.touch && pane.w >= 480 ? Math.round(240 - lw / 2) : pane.x + 2;   // touch screens: bottom centre, clear of the buttons
+      R(lx, pane.y + pane.h - 15, lw, 13, 'rgba(12,10,22,0.7)');
+      T(label, lx + 3, pane.y + pane.h - 17, '#bcd4f0', 'vt', 0);
     }
   }
 
@@ -491,7 +493,7 @@
       T(r[0], 136, 108 + i * 18, '#bcd4f0', 'vt', 0);
       T(r[1], 344, 108 + i * 18, '#f8d040', 'vt', 2);
     });
-    if (S.finaleT > 60 && (tick % 40 < 28)) T(tx.retry_hint, 240, 214, '#68e878', 'vt', 1);
+    if (S.finaleT > 60 && (tick % 40 < 28)) T(D.touch ? tx.t_retry_hint : tx.retry_hint, 240, 214, '#68e878', 'vt', 1);
   }
 
   // ---------------------------------------------------------------- cameras

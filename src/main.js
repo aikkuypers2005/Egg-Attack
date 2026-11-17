@@ -1,11 +1,12 @@
 // Egg Attack - the p5.js sketch: setup, the 60 steps per second game loop, menus and lobbies.
 (function () {
-  const DINO = window.DINO, sim = DINO.sim, D = DINO.draw, SP = DINO.sprites, FX = DINO.fx, I = DINO.input, N = DINO.net, SN = DINO.snap;
+  const DINO = window.DINO, sim = DINO.sim, D = DINO.draw, SP = DINO.sprites, FX = DINO.fx, I = DINO.input, N = DINO.net, SN = DINO.snap, TC = DINO.touch;
   const W = sim.W, H = sim.H;
   const STEP = 1000 / 60;
   const SNAP_EVERY = 3;         // the host sends a snapshot every 3 steps: 20 per second
   const q = new URLSearchParams(location.search);
   const tx = () => DINO.TEXT;
+  const tt = k => (TC.on && DINO.TEXT['t_' + k]) || DINO.TEXT[k];     // the wording for touch screens, where there is one
 
   let ready = false, t = 0, acc = 0;
   let app = 'title';            // title, controls, lobby, host, join, play, pause
@@ -53,13 +54,8 @@
     if (msg) say(msg);
   }
 
-  function fit() {
-    const s = Math.min(window.innerWidth / W, window.innerHeight / H);
-    const el = document.getElementById('game');
-    if (!el) return;
-    el.style.width = Math.max(W, Math.floor(W * s)) + 'px';
-    el.style.height = Math.max(H, Math.floor(H * s)) + 'px';
-  }
+  // The picture is made as large as fits in the window (on a phone: the screen in landscape, see touch.js).
+  function fit() { TC.layout(); }
   window.windowResized = fit;
 
   window.setup = function () {
@@ -68,6 +64,7 @@
     noSmooth();
     frameRate(60);
     c.elt.id = 'game';
+    c.parent('stage');
     fit();
     D.init(drawingContext);
 
@@ -125,7 +122,10 @@
     else if (app === 'lobby') tickLobby(m);
     else if (app === 'host') tickHost(m);
     else if (app === 'join') tickJoin(m);
-    else if (app === 'pause') tickPause(m);
+    else if (app === 'pause') {
+      if (role === 'guest' && N.status !== 'lost') guestNet({ mx: 0, jump: false, bite: false, grab: false });   // a guest's game goes on behind the menu
+      tickPause(m);
+    }
     else if (app === 'play') tickPlay(m);
   }
 
@@ -154,14 +154,17 @@
       const i = devs.indexOf(dev);
       if (i >= 0) devs.splice(i, 1); else if (devs.length < 8) devs.push(dev);       // press again to leave
     }
-    if (m.start && devs.length >= 2) start('local', devs.length);
+    const tapLine = TC.on && m.click && m.click.y >= 222;       // touch: the bottom line begins, or goes back
+    if (tapLine && devs.length < 2) { app = 'title'; return; }
+    if ((m.start || tapLine) && devs.length >= 2) start('local', devs.length);
   }
 
   function tickHost(m) {
     if (m.back || (m.click && m.click.y > 236)) { toTitle(); return; }
     if (N.status === 'error' || N.status === 'lost') { toTitle(tx().net_err); return; }
     const wanted = Number(q.get('n')) || 0;                           // test link: start by itself
-    if (N.status === 'ready' && N.count > 0 && (m.ok || (wanted && N.count >= wanted && t > 120))) start('host', 1 + N.count);
+    const tapCode = TC.on && m.click && m.click.y < 200;              // touch: tap the code to start
+    if (N.status === 'ready' && N.count > 0 && (m.ok || tapCode || (wanted && N.count >= wanted && t > 120))) start('host', 1 + N.count);
   }
 
   function tickJoin(m) {
@@ -181,12 +184,30 @@
         joinCode = joinCode.slice(0, -1) + abc[idx];
       }
     }
+    if (TC.on && m.click) {                                           // touch: the letter keys on the screen
+      const k = keyAt(m.click.x, m.click.y);
+      if (k === '<') joinCode = joinCode.slice(0, -1);
+      else if (k === 'JOIN') m.ok = true;
+      else if (k && joinCode.length < 4) joinCode += k;
+    }
     if (m.ok && joinCode.length === 4) N.join(joinCode);
+  }
+
+  // The letter keys of the join screen on a touch screen: 3 rows of 8 keys and a JOIN key.
+  const KEYS = 'ABCDEFGHJKLMNPRSTUVWXYZ<';
+  const keyBox = i => ({ x: 66 + (i % 8) * 44, y: 122 + Math.floor(i / 8) * 26, w: 40, h: 23 });
+  const JOIN_BOX = { x: 170, y: 201, w: 140, h: 24 };
+  function keyAt(x, y) {
+    const inBox = b => x >= b.x - 2 && x < b.x + b.w + 2 && y >= b.y - 1 && y < b.y + b.h + 2;
+    if (inBox(JOIN_BOX)) return 'JOIN';
+    for (let i = 0; i < KEYS.length; i++) if (inBox(keyBox(i))) return KEYS[i];
+    return '';
   }
 
   function tickPause(m) {
     if ((role === 'host' || role === 'guest') && N.status === 'lost') { toTitle(tx().net_lost); return; }
     if (m.up || m.down) psel = 1 - psel;
+    if (m.click && m.click.y >= 120 && m.click.y < 162) { psel = m.click.y < 141 ? 0 : 1; m.ok = true; }   // click or tap a line
     if (m.pause || m.back || (m.ok && psel === 0)) {
       app = 'play';
       if (role === 'host' && S) { S.paused = false; N.send({ k: 's', c: SN.encode(S) }); }
@@ -202,14 +223,19 @@
     return { mx: me && Math.abs(me.x) > 160 ? (me.x > 0 ? -1 : 1) : phase === 0 ? 1 : phase === 2 ? -1 : 0, jump: t % 150 === 0, bite: t % 40 < 3, grab: false };
   }
 
+  // A guest sends its input to the host and shows the host's latest picture of the game.
+  function guestNet(input) {
+    N.send(Object.assign({ k: 'i' }, input));
+    snapAge++;
+    S = SN.blend(snapPrev, snapCur, snapAge / SNAP_EVERY);
+    if (snapCur) FX.tick(snapCur);
+  }
+
   function tickPlay(m) {
     if (role === 'guest') {
       if (N.status === 'lost') { toTitle(tx().net_lost); return; }
-      N.send(Object.assign({ k: 'i' }, AUTO ? autoInput() : I.pollAll()));
-      snapAge++;
-      S = SN.blend(snapPrev, snapCur, snapAge / SNAP_EVERY);
-      if (snapCur) FX.tick(snapCur);
-      if (m.pause) toTitle();                                         // a guest leaves; the computer takes over their T-rex
+      guestNet(AUTO ? autoInput() : I.pollAll());
+      if (m.pause) { app = 'pause'; psel = 0; }                       // asks first; leaving hands the T-rex to the computer
       return;
     }
     if (role === 'host' && N.status === 'lost') { toTitle(tx().net_lost); return; }
@@ -236,14 +262,16 @@
     if (q.get('sheet')) { D.drawSheet(Number(q.get('sheet')) || 1); return; }   // sprite review pages
 
     D.menuOpen = app === 'pause';   // hides the deal panel under the pause menu
+    TC.setScreen(app === 'play' && S && S.mode === 'play' ? 'play' : app === 'lobby' ? 'lobby' : 'menu');
     if (app === 'play' || app === 'pause') {
       if (!S) { D.R(0, 0, W, H, '#08070d'); return; }
       D.render(S, view, t);
       if (noticeT > 0 && S.mode === 'play') { panel(50, 236, 380, 15); D.T(notice, 240, 235, '#ffb0a0', 'vt', 1); }
       if (app === 'pause' || (S.paused && role === 'guest')) {
         D.R(0, 0, W, H, 'rgba(8, 6, 16, 0.76)');
-        D.T(x.paused, 240, 82, '#ffffff', 'ps', 1, 2);
-        if (app === 'pause') [x.resume, x.tomenu].forEach((s, i) => D.T((psel === i ? '> ' : '') + s + (psel === i ? ' <' : ''), 240, 126 + i * 20, psel === i ? '#f8d040' : '#ffffff', 'vt', 1));
+        const leaving = app === 'pause' && role === 'guest';          // a guest cannot pause the game, only leave it
+        D.T(leaving ? x.leave_q : x.paused, 240, 82, '#ffffff', 'ps', 1, 2);
+        if (app === 'pause') [leaving ? x.keep : x.resume, x.tomenu].forEach((s, i) => D.T((psel === i ? '> ' : '') + s + (psel === i ? ' <' : ''), 240, 126 + i * 20, psel === i ? '#f8d040' : '#ffffff', 'vt', 1));
       }
       return;
     }
@@ -256,13 +284,13 @@
       MENU.forEach((k, i) => D.T((i === sel ? '> ' : '') + x[k] + (i === sel ? ' <' : ''), 240, 74 + i * 20, i === sel ? '#f8d040' : '#ffffff', 'vt', 1));
       if (noticeT > 0) { D.R(90, 182, 300, 16, 'rgba(80, 12, 12, 0.85)'); D.T(notice, 240, 182, '#ff9898', 'vt', 1); }
       D.T(x.credit, 240, 236, '#cfd6ff', 'vt', 1);
-      D.T(x.nav, 240, 252, '#a8b4d4', 'vt', 1);
+      D.T(tt('nav'), 240, 252, '#a8b4d4', 'vt', 1);
     } else if (app === 'controls') {
       panel(10, 8, 460, 254);
       D.T(x.c_head, 240, 14, '#ffe868', 'ps', 1, 1);
-      ['c_k1', 'c_k2', 'c_k3', 'c_k4', 'c_pad', 'c_solo'].forEach((k, i) => D.T(x[k], 20, 32 + i * 15, i < 4 ? '#f8d040' : i === 4 ? '#ff9868' : '#78e878', 'vt', 0));
+      ['c_k1', 'c_k2', 'c_k3', 'c_k4', 'c_pad', TC.on ? 'c_touch' : 'c_solo'].forEach((k, i) => D.T(x[k], 20, 32 + i * 15, i < 4 ? '#f8d040' : i === 4 ? '#ff9868' : '#78e878', 'vt', 0));
       ['c_tip1', 'c_tip2', 'c_tip3', 'c_tip4', 'c_tip5'].forEach((k, i) => D.T(x[k], 20, 130 + i * 16, '#ffffff', 'vt', 0));
-      D.T(x.back, 240, 242, '#a8b4d4', 'vt', 1);
+      D.T(tt('back'), 240, 242, '#a8b4d4', 'vt', 1);
     } else if (app === 'lobby') {
       panel(20, 10, 440, 250);
       D.T(x.lobby_head, 240, 16, '#ffffff', 'ps', 1, 1);
@@ -270,11 +298,11 @@
       for (let i = 0; i < 8; i++) {
         const cx = 34 + (i % 2) * 216, cy = 52 + (i >> 1) * 17;
         D.T('P' + (i + 1), cx, cy, devs[i] ? '#f8d040' : '#5a5878', 'vt', 0);
-        D.T(devs[i] ? I.NAMES[devs[i]] : '...', cx + 26, cy, devs[i] ? '#ffffff' : '#5a5878', 'vt', 0);
+        D.T(devs[i] ? (TC.on && devs[i] === 'kb1' ? x.t_dev : I.NAMES[devs[i]]) : '...', cx + 26, cy, devs[i] ? '#ffffff' : '#5a5878', 'vt', 0);
       }
       ['c_k1', 'c_k2', 'c_k3', 'c_k4', 'c_pad'].forEach((k, i) => D.T(x[k], 34, 128 + i * 14, '#a8b4d4', 'vt', 0));
       D.T(x.lobby_pads.replace('{n}', I.padCount()), 34, 202, '#78e878', 'vt', 0);
-      D.T(devs.length >= 2 ? x.lobby_go.replace('{n}', devs.length) : x.lobby_need, 240, 232, devs.length >= 2 ? '#68e878' : '#ffffff', 'vt', 1);
+      D.T(devs.length >= 2 ? tt('lobby_go').replace('{n}', devs.length) : tt('lobby_need'), 240, 232, devs.length >= 2 ? '#68e878' : '#ffffff', 'vt', 1);
     } else if (app === 'host') {
       panel(40, 14, 400, 240);
       D.T(x.host_head, 240, 24, '#ffffff', 'ps', 1, 1);
@@ -282,21 +310,30 @@
       D.T(N.status === 'opening' ? '....' : N.code, 240, 76, '#f8d040', 'ps', 1, 4);
       const waiting = x.host_wait + ['', '.', '..'][Math.floor(t / 30) % 3];
       D.T(N.count > 0 ? x.host_n.replace('{n}', N.count) : waiting, 240, 134, N.count > 0 ? '#68e878' : '#ffffff', 'vt', 1);
-      if (N.count > 0) D.T(x.host_go, 240, 152, '#ffffff', 'vt', 1);
+      if (N.count > 0) D.T(tt('host_go'), 240, 152, '#ffffff', 'vt', 1);
       D.drawLineup(t, 222);
-      D.T(x.back, 240, 238, '#a8b4d4', 'vt', 1);
+      D.T(tt('back'), 240, 238, '#a8b4d4', 'vt', 1);
     } else if (app === 'join') {
       panel(40, 14, 400, 240);
       D.T(x.join_head, 240, 24, '#ffffff', 'ps', 1, 1);
-      D.T(x.join_code, 240, 52, '#cfd6ff', 'vt', 1);
+      D.T(tt('join_code'), 240, 52, '#cfd6ff', 'vt', 1);
       D.T((joinCode + '____').slice(0, 4), 240, 76, '#f8d040', 'ps', 1, 4);
       if (N.status === 'opening') D.T(x.join_go, 240, 134, '#ffffff', 'vt', 1);
       else if (N.status === 'ready') {
         D.T(x.join_ok.replace('{n}', N.slot + 1), 240, 134, '#68e878', 'vt', 1);
         D.T(x.join_n.replace('{n}', N.count + 1), 240, 152, '#ffffff', 'vt', 1);
       }
-      D.drawLineup(t, 222);
-      D.T(x.back, 240, 238, '#a8b4d4', 'vt', 1);
+      if (TC.on && N.status === '') {                                 // touch: letter keys instead of the row of T-rexes
+        for (let i = 0; i < KEYS.length; i++) {
+          const b = keyBox(i);
+          D.R(b.x, b.y, b.w, b.h, KEYS[i] === '<' ? 'rgba(120, 52, 52, 0.95)' : 'rgba(58, 62, 108, 0.95)');
+          D.T(KEYS[i], b.x + b.w / 2 + 1, b.y + 7, '#ffffff', 'ps', 1, 1);
+        }
+        const full = joinCode.length === 4;
+        D.R(JOIN_BOX.x, JOIN_BOX.y, JOIN_BOX.w, JOIN_BOX.h, full ? 'rgba(44, 122, 60, 0.95)' : 'rgba(40, 40, 60, 0.9)');
+        D.T(x.t_join, 240, JOIN_BOX.y + 7, full ? '#ffffff' : '#77788c', 'ps', 1, 1);
+      } else D.drawLineup(t, 222);
+      D.T(tt('back'), 240, 238, '#a8b4d4', 'vt', 1);
     }
   }
 

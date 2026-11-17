@@ -30,14 +30,24 @@
   });
   window.addEventListener('keyup', e => { keys[normCode(e)] = false; });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  // A click or tap on the picture, in game pixels. Touch buttons lie over the picture and do not count.
+  // I.rotated: the picture is turned a quarter to the right (a phone held upright, see touch.js).
+  I.rotated = false;
   window.addEventListener('pointerdown', e => {
     const el = document.getElementById('game');
-    if (!el) return;
+    if (!el || (e.target && e.target.closest && e.target.closest('.tc'))) return;
     const rect = el.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
-    const gx = ((e.clientX - rect.left) / rect.width) * 480, gy = ((e.clientY - rect.top) / rect.height) * 270;
+    const gx = I.rotated ? ((e.clientY - rect.top) / rect.height) * 480 : ((e.clientX - rect.left) / rect.width) * 480;
+    const gy = I.rotated ? ((rect.right - e.clientX) / rect.width) * 270 : ((e.clientY - rect.top) / rect.height) * 270;
     if (gx >= 0 && gx <= 480 && gy >= 0 && gy <= 270) clicks.push({ x: gx, y: gy });
   });
+
+  // A touch button presses a key by name, exactly like the keyboard does.
+  I.press = function (code, down) {
+    if (down && !keys[code]) taps[code] = true;
+    keys[code] = !!down;
+  };
 
   // Keyboard layouts: [left, right, jump, bite, grab]
   const KB = {

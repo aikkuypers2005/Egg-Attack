@@ -80,6 +80,9 @@ Then open http://localhost:8123.
 | Keys 3 | J, L | I | H | K |
 | Keys 4 | Numpad 4, 6 | Numpad 8 | Numpad 0 | Numpad 5 |
 | Controller | Stick or D-pad | A | X | B |
+| Phone or tablet | Arrow buttons | JUMP | BITE | GRAB |
+
+**On a phone or tablet** the same link works. Buttons appear on the screen, the menus work by tapping, and the game is always shown in landscape: hold the phone sideways. Where the browser allows it (Chrome on Android), the game goes full screen after the first tap. On an iPhone, use Share > Add to Home Screen to play without the browser bars. The touch buttons count as Keys 1.
 
 Most keyboards only register a few keys at once. For 3 or 4 keyboard players, plug in a second USB keyboard. Chrome and Edge accept at most 4 controllers.
 
